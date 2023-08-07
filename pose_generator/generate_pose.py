@@ -84,135 +84,138 @@ class OpenposeDetectorPoint(OpenposeDetector):
 
         return detected_map, candidate, subset
 
-body_point_name = [
-    # 'root',
-    'hip',
-    'torso',
-    'neck',
-    'right_shoulder',
-    'right_elbow',
-    'right_hand',
-    'left_shoulder',
-    'left_elbow',
-    'left_hand',
-    'right_hip',
-    'right_knee',
-    'right_foot',
-    'left_hip',
-    'left_knee',
-    'left_foot',
-]
+def generate_pose(image_path = 'binmayong_texture.png',
+                  mask_path = 'binmayong_mask.png',
+                  char_root_dir='examples/characters',
+                  char_name='tempchar',
+                  pose_name = 'pose.png'):
 
-body_point_parent_name = [
-    # 'null',
-    'root',
-    'hip',
-    'torso',
-    'torso',
-    'right_shoulder',
-    'right_elbow',
-    'torso',
-    'left_shoulder',
-    'left_elbow',
-    'root',
-    'right_hip',
-    'right_knee',
-    'root',
-    'left_hip',
-    'left_knee',
-]
+    body_point_name = [
+        # 'root',
+        'hip',
+        'torso',
+        'neck',
+        'right_shoulder',
+        'right_elbow',
+        'right_hand',
+        'left_shoulder',
+        'left_elbow',
+        'left_hand',
+        'right_hip',
+        'right_knee',
+        'right_foot',
+        'left_hip',
+        'left_knee',
+        'left_foot',
+    ]
 
-body_point_index = {
-    'root': [8, 11],
-    'hip': [8, 11],
-    'torso': 1,
-    'neck': 0,
-    'right_shoulder': 2,
-    'right_elbow': 3,
-    'right_hand': 4,
-    'left_shoulder': 5,
-    'left_elbow': 6,
-    'left_hand': 7,
-    'right_hip': 8,
-    'right_knee': 9,
-    'right_foot': 10,
-    'left_hip': 11,
-    'left_knee': 12,
-    'left_foot': 13,
-}
+    body_point_parent_name = [
+        # 'null',
+        'root',
+        'hip',
+        'torso',
+        'torso',
+        'right_shoulder',
+        'right_elbow',
+        'torso',
+        'left_shoulder',
+        'left_elbow',
+        'root',
+        'right_hip',
+        'right_knee',
+        'root',
+        'left_hip',
+        'left_knee',
+    ]
 
-
-detect_resolution = 512
-control_detector = 'lllyasviel/ControlNet'
-posedet = OpenposeDetectorPoint.from_pretrained(control_detector)
-
-char_root_dir = 'examples/characters'
-char_name = 'binmayong'
-pose_name = 'pose.png'
-image_name = 'binmayong_texture.png'
-mask_name = 'binmayong_mask.png'
-
-image = Image.open(os.path.join(char_root_dir, char_name, image_name))
-detected_map, candidate, subset = posedet(image)
-detected_map.save(os.path.join(char_root_dir, char_name, pose_name))
-
-# resize image 
-image_np = np.array(image, dtype=np.uint8)
-image_np = HWC3(image_np)
-image_np = resize_image(image_np, detect_resolution)
-image_resized = Image.fromarray(image_np)
-image_resized.save(os.path.join(char_root_dir, char_name, 'texture.png'))
-
-# resize mask image
-mask = Image.open(os.path.join(char_root_dir, char_name, mask_name))
-mask_np = np.array(mask, dtype=np.uint8)
-mask_np = HWC3(mask_np)
-mask_np = resize_image(mask_np, detect_resolution)
-image_resized = Image.fromarray(mask_np)
-image_resized.save(os.path.join(char_root_dir, char_name, 'mask.png'))
+    body_point_index = {
+        'root': [8, 11],
+        'hip': [8, 11],
+        'torso': 1,
+        'neck': 0,
+        'right_shoulder': 2,
+        'right_elbow': 3,
+        'right_hand': 4,
+        'left_shoulder': 5,
+        'left_elbow': 6,
+        'left_hand': 7,
+        'right_hip': 8,
+        'right_knee': 9,
+        'right_foot': 10,
+        'left_hip': 11,
+        'left_knee': 12,
+        'left_foot': 13,
+    }
 
 
-point_location = {}
-W, H = image_resized.size
-key_list = list(body_point_index.keys())
+    detect_resolution = 512
+    control_detector = 'lllyasviel/ControlNet'
+    posedet = OpenposeDetectorPoint.from_pretrained(control_detector)
 
-for i in range(len(key_list)):
-    key = key_list[i]
-    index = body_point_index[key]
-    if type(index) is list:
-        point_left = candidate[index[0]]
-        point_right = candidate[index[1]]
-        point = [(point_left[0] + point_right[0]) / 2,
-                 (point_left[1] + point_right[1]) / 2]
-    else:
-        point = candidate[index]
-    point = [int(point[0] * W), int(point[1] * H)]
-    point_location[key] = point
+    image = Image.open(image_path)
+    detected_map, candidate, subset = posedet(image)
+    pose_dir = os.path.join(char_root_dir, char_name, pose_name)
+    detected_map.save(pose_dir)
 
+    # resize image 
+    image_np = np.array(image, dtype=np.uint8)
+    image_np = HWC3(image_np)
+    image_np = resize_image(image_np, detect_resolution)
+    image_resized = Image.fromarray(image_np)
+    image_resized.save(os.path.join(char_root_dir, char_name, 'texture.png'))
 
-config_file = os.path.join(char_root_dir, char_name, 'char_cfg.yaml')
-config_dict = {}
-config_dict['width'] = detected_map.size[0]
-config_dict['height'] = detected_map.size[1]
-config_dict['skeleton'] = []
-
-first_item = {}
-first_item['loc'] = point_location['root']
-first_item['name'] = 'root'
-first_item['parent'] = None
-config_dict['skeleton'].append(first_item)
-
-for i, name in enumerate(body_point_name):
-    item = {}
-    item['loc'] = point_location[name]
-    item['name'] = name
-    item['parent'] = body_point_parent_name[i]
-
-    config_dict['skeleton'].append(item)
+    # resize mask image
+    mask = Image.open(mask_path)
+    mask_np = np.array(mask, dtype=np.uint8)
+    mask_np = HWC3(mask_np)
+    mask_np = resize_image(mask_np, detect_resolution)
+    image_resized = Image.fromarray(mask_np)
+    image_resized.save(os.path.join(char_root_dir, char_name, 'mask.png'))
 
 
-with open(config_file, 'w') as file:
-    documents = yaml.dump(config_dict, file)
+    point_location = {}
+    W, H = image_resized.size
+    key_list = list(body_point_index.keys())
 
-# export MESA_GLSL_VERSION_OVERRIDE=330
-# export MESA_GL_VERSION_OVERRIDE=3.3
+    for i in range(len(key_list)):
+        key = key_list[i]
+        index = body_point_index[key]
+        if type(index) is list:
+            point_left = candidate[index[0]]
+            point_right = candidate[index[1]]
+            point = [(point_left[0] + point_right[0]) / 2,
+                    (point_left[1] + point_right[1]) / 2]
+        else:
+            point = candidate[index]
+        point = [int(point[0] * W), int(point[1] * H)]
+        point_location[key] = point
+
+
+    config_file = os.path.join(char_root_dir, char_name, 'char_cfg.yaml')
+    config_dict = {}
+    config_dict['width'] = detected_map.size[0]
+    config_dict['height'] = detected_map.size[1]
+    config_dict['skeleton'] = []
+
+    first_item = {}
+    first_item['loc'] = point_location['root']
+    first_item['name'] = 'root'
+    first_item['parent'] = None
+    config_dict['skeleton'].append(first_item)
+
+    for i, name in enumerate(body_point_name):
+        item = {}
+        item['loc'] = point_location[name]
+        item['name'] = name
+        item['parent'] = body_point_parent_name[i]
+
+        config_dict['skeleton'].append(item)
+
+
+    with open(config_file, 'w') as file:
+        documents = yaml.dump(config_dict, file)
+    
+    return pose_dir
+
+if __name__ == '__main__':
+    generate_pose(char_name='tempchar')
