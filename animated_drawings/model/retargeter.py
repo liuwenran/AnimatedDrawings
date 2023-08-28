@@ -223,6 +223,23 @@ class Retargeter():
             bvh_joint_to_projection_depth[joint_name] = joint_depths
 
         return bvh_joint_to_projection_depth
+    
+    def _manipulate_depths(self, joint_depths: Dict[str, npt.NDArray[np.float32]]) -> Dict[str, npt.NDArray[np.float32]]:
+        max_depth = -10000
+        min_depth = 10000
+        for key in joint_depths.keys():
+            if joint_depths[key] > max_depth:
+                max_depth = joint_depths[key]
+            if joint_depths[key] < min_depth:
+                min_depth = joint_depths[key]
+        
+        # put hand and arm to the front
+        divide_internal = (max_depth - min_depth) / 100
+        for key in joint_depths.keys():
+            if 'Arm' in key or 'Hand' in key:
+                joint_depths[key] = max_depth + divide_internal
+        
+        return joint_depths
 
     def scale_root_positions_for_character(self, char_to_bvh_scale: float, projection_bodypart_group_for_offset: str) -> None:
         """
@@ -334,6 +351,7 @@ class Retargeter():
         orientations = {key: val[frame_idx] for (key, val) in self.char_joint_to_orientation.items()}
 
         joint_depths = {key: val[frame_idx] for (key, val) in self.bvh_joint_to_projection_depth.items()}
+        joint_depths = self._manipulate_depths(joint_depths)
 
         root_position = np.array([self.char_root_positions[frame_idx, 0], self.char_root_positions[frame_idx, 1], 0.0], dtype=np.float32)
         root_position += self.character_start_loc  # offset by character's starting location
