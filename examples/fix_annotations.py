@@ -89,4 +89,4 @@ if __name__ == "__main__":
     if not os.path.isfile(cfg_path):
         print(f"[Error] File not found. Expected config file at: {cfg_path}")
         sys.exit(1)
-    app.run(port=args.port, debug=False)
+    app.run(host='0.0.0.0', port=args.port, debug=False)
