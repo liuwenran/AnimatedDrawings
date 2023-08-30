@@ -9,6 +9,8 @@ import cv2
 import yaml
 import os
 
+os.environ['CURL_CA_BUNDLE'] = ''
+
 
 def draw_pose(pose, H, W, draw_body=True, draw_hand=True, draw_face=True):
     bodies = pose['bodies']
@@ -29,19 +31,24 @@ def draw_pose(pose, H, W, draw_body=True, draw_hand=True, draw_face=True):
 
     return canvas
 
+
+    
 class OpenposeDetectorPoint(OpenposeDetector):
 
-    def __call__(self, input_image, detect_resolution=512, image_resolution=512, hand_and_face=False, return_pil=True):
+    def __call__(self, input_image, image_path=None, detect_resolution=512, image_resolution=512, hand_and_face=False, return_pil=True):
         # hand = False
         if not isinstance(input_image, np.ndarray):
             input_image = np.array(input_image, dtype=np.uint8)
 
+        H_, W_, C = input_image.shape
         input_image = HWC3(input_image)
         input_image = resize_image(input_image, detect_resolution)
         input_image = input_image[:, :, ::-1].copy()
         H, W, C = input_image.shape
         with torch.no_grad():
             candidate, subset = self.body_estimation(input_image)
+            if len(candidate) == 0:
+                raise "Not able to estimate pose by openpose !!!"
             hands = []
             faces = []
             if hand_and_face:
@@ -74,22 +81,112 @@ class OpenposeDetectorPoint(OpenposeDetector):
             canvas = draw_pose(pose, H, W)
 
         detected_map = HWC3(canvas)
-        img = resize_image(input_image, image_resolution)
-        H, W, C = img.shape
+        # img = resize_image(input_image, image_resolution)
+        # H, W, C = img.shape
 
-        detected_map = cv2.resize(detected_map, (W, H), interpolation=cv2.INTER_NEAREST)
+        detected_map = cv2.resize(detected_map, (W_, H_), interpolation=cv2.INTER_NEAREST)
 
         if return_pil:
             detected_map = Image.fromarray(detected_map)
 
         return detected_map, candidate, subset
 
-def generate_pose(image_path = 'binmayong_texture.png',
-                  mask_path = 'binmayong_mask.png',
-                  char_root_dir='examples/characters',
-                  char_name='tempchar',
-                  pose_name = 'pose.png'):
 
+def humanart(img, pose_dir):
+    from mmcv.image import imread
+    from mmpose.apis import inference_topdown, init_model
+    from mmpose.registry import VISUALIZERS
+    from mmpose.structures import merge_data_samples
+    
+    config = 'mmpose/configs/body_2d_keypoint/topdown_heatmap/humanart/td-hm_hrnet-w32_8xb64-210e_humanart-256x192.py'
+    checkpoint = 'weights/td-hm_hrnet-w32_8xb64-210e_humanart-256x192-0773ef0b_20230614.pth'
+    
+    model = init_model(
+        config,
+        checkpoint,
+        device='cuda:0',
+        cfg_options=None)
+
+    # init visualizer
+    model.cfg.visualizer.radius = 5
+    model.cfg.visualizer.alpha = 0.
+    model.cfg.visualizer.line_width = 3
+
+    visualizer = VISUALIZERS.build(model.cfg.visualizer)
+    visualizer.set_dataset_meta(
+       model.dataset_meta)
+
+    # inference a single image
+    batch_results = inference_topdown(model, img)
+    results = merge_data_samples(batch_results)
+
+    # show the results
+    img = imread(img, channel_order='rgb')
+    H, W, C = img.shape
+    
+    #background = np.zeros((H, W, 3), dtype=np.int8)
+    #visualizer.add_datasample(
+    #    'result',
+    #    background,
+    #    data_sample=results,
+    #    draw_gt=False,
+    #    draw_bbox=True,
+    #    draw_heatmap=False,
+    #    show=False,
+    #    out_file=pose_dir)
+
+    # if pose_dir is not None:
+    #   print_log(
+    #        f'the output image has been saved at {pose_dir}',
+    #        logger='current',
+    #        level=logging.INFO)
+
+    instances = results.pred_instances
+    keypoints = instances.get('transformed_keypoints', instances.keypoints)
+    scores = instances.keypoint_scores
+    keypoints_visible = instances.keypoints_visible
+    
+    # convert mmpose to openpose
+    keypoints_info = np.concatenate((keypoints, 
+                                     scores[..., None], 
+                                     keypoints_visible[...,None]),axis=-1)
+    neck = np.mean(keypoints_info[:, [5, 6]], axis=1)
+    new_keypoints_info = np.insert(keypoints_info, 17, neck, axis=1)
+    mmpose_idx = [17, 6, 8, 10, 7, 9, 12, 14, 16, 13, 15, 2, 1, 4, 3]
+    openpose_idx = [1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17]
+    new_keypoints_info[:, openpose_idx] = new_keypoints_info[:, mmpose_idx]
+    keypoints_info = new_keypoints_info
+
+    keypoints, scores, keypoints_visible = keypoints_info[..., :2], keypoints_info[..., 2], keypoints_info[..., 3]
+    
+    candidate = keypoints[0]
+    subset = [[i for i in range(len(candidate))] + [1] + [len(candidate)]]
+    candidate[:, 0] /= float(W)
+    candidate[:, 1] /= float(H)
+    
+    hands = []
+    faces = []
+    bodies = dict(candidate=candidate, subset=subset)
+    pose = dict(bodies=bodies, hands=hands, faces=faces)
+
+    # draw pose.png
+    canvas = draw_pose(pose, H, W)
+
+    detected_map = HWC3(canvas)
+    detected_map = cv2.resize(detected_map, (W, H), interpolation=cv2.INTER_NEAREST)
+    detected_map = Image.fromarray(detected_map)
+    detected_map.save(pose_dir)
+    
+    return candidate
+    
+
+def generate_pose(image_path = '../outputs/segment/image_resized.jpg',
+                  mask_path = '../cutputs/segement/mask_out.jpg',
+                  char_root_dir='../configs/animated_drawing/characters/',
+                  char_name='tempchar',
+                  pose_name = 'pose.png',
+                  mode='humanart'):
+    
     body_point_name = [
         # 'root',
         'hip',
@@ -147,20 +244,27 @@ def generate_pose(image_path = 'binmayong_texture.png',
         'left_foot': 13,
     }
 
-
-    detect_resolution = 512
-    control_detector = 'lllyasviel/ControlNet'
-    posedet = OpenposeDetectorPoint.from_pretrained(control_detector)
-
+    # detect_resolution = 512
     image = Image.open(image_path)
-    detected_map, candidate, subset = posedet(image)
     pose_dir = os.path.join(char_root_dir, char_name, pose_name)
-    detected_map.save(pose_dir)
+    
+    if mode == 'humanart':
+        candidate = humanart(image_path, pose_dir)
+        detected_map = Image.open(pose_dir)
+        
+    elif mode == 'controlnet_aux':
+        control_detector = 'lllyasviel/ControlNet'
+        posedet = OpenposeDetectorPoint.from_pretrained(control_detector)
+        detected_map, candidate, subset = posedet(image, image_path)
+        detected_map.save(pose_dir)
+        
+    else:
+        NotImplementedError
 
     # resize image 
     image_np = np.array(image, dtype=np.uint8)
     image_np = HWC3(image_np)
-    image_np = resize_image(image_np, detect_resolution)
+    # image_np = resize_image(image_np, detect_resolution)
     image_resized = Image.fromarray(image_np)
     image_resized.save(os.path.join(char_root_dir, char_name, 'texture.png'))
 
@@ -168,7 +272,7 @@ def generate_pose(image_path = 'binmayong_texture.png',
     mask = Image.open(mask_path)
     mask_np = np.array(mask, dtype=np.uint8)
     mask_np = HWC3(mask_np)
-    mask_np = resize_image(mask_np, detect_resolution)
+    # mask_np = resize_image(mask_np, detect_resolution)
     image_resized = Image.fromarray(mask_np)
     image_resized.save(os.path.join(char_root_dir, char_name, 'mask.png'))
 
@@ -177,6 +281,7 @@ def generate_pose(image_path = 'binmayong_texture.png',
     W, H = image_resized.size
     key_list = list(body_point_index.keys())
 
+    
     for i in range(len(key_list)):
         key = key_list[i]
         index = body_point_index[key]
@@ -211,7 +316,7 @@ def generate_pose(image_path = 'binmayong_texture.png',
 
         config_dict['skeleton'].append(item)
 
-
+    #print(config_file)
     with open(config_file, 'w') as file:
         documents = yaml.dump(config_dict, file)
     
