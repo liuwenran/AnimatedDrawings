@@ -1,33 +1,33 @@
 height: 960
 skeleton:
 - loc:
-  - 492
-  - 680
+  - 500
+  - 634
   name: root
   parent: null
 - loc:
-  - 492
-  - 682
+  - 516
+  - 579
   name: hip
   parent: root
 - loc:
-  - 353
-  - 521
+  - 403
+  - 537
   name: torso
   parent: hip
 - loc:
-  - 400
-  - 189
+  - 368
+  - 394
   name: neck
   parent: torso
 - loc:
-  - 369
-  - 667
+  - 373
+  - 613
   name: right_hip_b
   parent: root
 - loc:
   - 378
-  - 769
+  - 764
   name: right_knee_b
   parent: right_hip_b
 - loc:

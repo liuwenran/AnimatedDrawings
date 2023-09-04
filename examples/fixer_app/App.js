@@ -93,7 +93,7 @@ export default function App() {
           id="data"
           name="data"
         />
-        <button type="submit">Submit</button>
+        <button onclick="http://10.140.24.141:8158/" type="submit">Submit</button>
       </form>
     </>
   );
