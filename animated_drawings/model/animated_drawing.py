@@ -321,6 +321,11 @@ class AnimatedDrawing(Transform, TimeManager):
         bvh_joint_names = self.retargeter.bvh_joint_names
         motion_cfg.validate_bvh(bvh_joint_names)
         retarget_cfg.validate_char_and_bvh_joint_names(char_joint_names, bvh_joint_names)
+        print('=============================================')
+        print('char_joint_names', char_joint_names)
+        print('=============================================')
+        print('char_cfg.skeleton', self.char_cfg.skeleton)
+        
 
         # a shorter alias
         char_bvh_root_offset: RetargetConfig.CharBvhRootOffset = self.retarget_cfg.char_bvh_root_offset
@@ -436,6 +441,9 @@ class AnimatedDrawing(Transform, TimeManager):
             seeds_xy = (self.img_dim * np.linspace(dist_joint_xy, prox_joint_xy, num=20, endpoint=False)).round()
             heap.extend([(0, (joint_idx, tuple(seed_xy.astype(np.int32)))) for seed_xy in seeds_xy])
 
+        print('joint_idx', joint_idx)
+        print('joint_name_to_idx', joint_name_to_idx)
+        
         # BFS search
         start_time: float = time.time()
         logging.info('Starting joint -> mask pixel BFS')
@@ -594,12 +602,26 @@ class AnimatedDrawing(Transform, TimeManager):
         # set per-joint triangle colors
         color_set: set[Tuple[np.float32, np.float32, np.float32]] = set()
         r = g = b = np.linspace(0, 1, 4, dtype=np.float32)
+        i = 0
         while len(color_set) < len(self.joint_to_tri_v_idx):
-            color = (np.random.choice(r), np.random.choice(g), np.random.choice(b))
+            # color = (np.random.choice(r), np.random.choice(g), np.random.choice(b))
+            i += 0.07
+            color = (i, i, i)
             color_set.add(color)
+        
         colors: npt.NDArray[np.float32] = np.array(list(color_set), np.float32)
-
+        
+        print('======================================================')
+        print('len(joint_to_tri_v_idx)', len(self.joint_to_tri_v_idx))
+        print('======================================================')
+        
+        c_idx_retarget = [4, 3, 1, 2, 2, 0, 3, 1, 0, 4, 0, 0, 0, 0]
+        
         for c_idx, v_idxs in enumerate(self.joint_to_tri_v_idx.values()):
+            # map 14 joint to 5 body parts 
+            if len(self.joint_to_tri_v_idx) == 14:
+                print('Map 14 joint to 5 body parts ')
+                c_idx = c_idx_retarget[c_idx]
             self.vertices[v_idxs, 3:6] = colors[c_idx]  # rgb colors
 
     def _initialize_opengl_resources(self) -> None:

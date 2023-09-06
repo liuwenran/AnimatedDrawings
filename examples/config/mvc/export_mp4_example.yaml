@@ -9,4 +9,4 @@ view:
 controller:
   MODE: video_render
   OUTPUT_VIDEO_PATH: ./video.mp4
-  OUTPUT_VIDEO_CODEC: avc1
+  OUTPUT_VIDEO_CODEC: mp4v
