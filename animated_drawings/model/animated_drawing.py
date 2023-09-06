@@ -29,6 +29,9 @@ from animated_drawings.model.vectors import Vectors
 from animated_drawings.config import CharacterConfig, MotionConfig, RetargetConfig
 
 
+DEBUG_FLAG_PARSE = False
+
+
 class AnimatedDrawingMesh(TypedDict):
     vertices: npt.NDArray[np.float32]
     triangles: List[npt.NDArray[np.int32]]
@@ -263,6 +266,10 @@ class AnimatedDrawing(Transform, TimeManager):
         self._is_opengl_initialized: bool = False
         self._vertex_buffer_dirty_bit: bool = True
 
+        if DEBUG_FLAG_PARSE:
+            # dirty code for middle align, need to check
+            self.vertices[:, 0] -= 0.35
+            self.vertices[:, 1] -= 0.4
         # pose the animated drawing using the first frame of the bvh
         self.update()
 
@@ -321,11 +328,6 @@ class AnimatedDrawing(Transform, TimeManager):
         bvh_joint_names = self.retargeter.bvh_joint_names
         motion_cfg.validate_bvh(bvh_joint_names)
         retarget_cfg.validate_char_and_bvh_joint_names(char_joint_names, bvh_joint_names)
-        print('=============================================')
-        print('char_joint_names', char_joint_names)
-        print('=============================================')
-        print('char_cfg.skeleton', self.char_cfg.skeleton)
-        
 
         # a shorter alias
         char_bvh_root_offset: RetargetConfig.CharBvhRootOffset = self.retarget_cfg.char_bvh_root_offset
@@ -386,12 +388,13 @@ class AnimatedDrawing(Transform, TimeManager):
         self.rig.set_global_orientations(frame_orientations)
 
         # using new joint positions, calculate new mesh vertex xy positions
-        control_points: npt.NDArray[np.float32] = self.rig.get_joints_2D_positions() - root_position[:2]
-        self.vertices[:, :2] = self.arap.solve(control_points) + root_position[:2]
-
-        # use the z position of the rig's root joint for all mesh vertices
-        self.vertices[:, 2] = self.rig.root_joint.get_world_position()[2]
-
+        if not DEBUG_FLAG_PARSE:
+            control_points: npt.NDArray[np.float32] = self.rig.get_joints_2D_positions() - root_position[:2]
+            self.vertices[:, :2] = self.arap.solve(control_points) + root_position[:2]
+        
+            # use the z position of the rig's root joint for all mesh vertices
+            self.vertices[:, 2] = self.rig.root_joint.get_world_position()[2]
+        
         self._vertex_buffer_dirty_bit = True
 
         # using joint depths, determine the correct order in which to render the character
@@ -440,9 +443,6 @@ class AnimatedDrawing(Transform, TimeManager):
             prox_joint_xy: List[float] = joints_d[joint['parent']]['loc']
             seeds_xy = (self.img_dim * np.linspace(dist_joint_xy, prox_joint_xy, num=20, endpoint=False)).round()
             heap.extend([(0, (joint_idx, tuple(seed_xy.astype(np.int32)))) for seed_xy in seeds_xy])
-
-        print('joint_idx', joint_idx)
-        print('joint_name_to_idx', joint_name_to_idx)
         
         # BFS search
         start_time: float = time.time()
@@ -594,7 +594,7 @@ class AnimatedDrawing(Transform, TimeManager):
 
         # initialize xy positions of mesh vertices
         self.vertices[:, :2] = self.arap.solve(self.rig.get_joints_2D_positions()).reshape([-1, 2])
-
+            
         # initialize texture coordinates
         self.vertices[:, 6] = self.mesh['vertices'][:, 1]                        # u tex
         self.vertices[:, 7] = self.mesh['vertices'][:, 0]                        # v tex
@@ -605,23 +605,25 @@ class AnimatedDrawing(Transform, TimeManager):
         i = 0
         while len(color_set) < len(self.joint_to_tri_v_idx):
             # color = (np.random.choice(r), np.random.choice(g), np.random.choice(b))
-            i += 0.07
+            i += 0.06
             color = (i, i, i)
             color_set.add(color)
         
         colors: npt.NDArray[np.float32] = np.array(list(color_set), np.float32)
         
-        print('======================================================')
-        print('len(joint_to_tri_v_idx)', len(self.joint_to_tri_v_idx))
-        print('======================================================')
-        
-        c_idx_retarget = [4, 3, 1, 2, 2, 0, 3, 1, 0, 4, 0, 0, 0, 0]
-        
-        for c_idx, v_idxs in enumerate(self.joint_to_tri_v_idx.values()):
+        c_idx_retarget = {
+            'root': 0, 'hip': 0, 'torso': 0, 'neck': 0, 
+            'right_shoulder': 0, 'right_elbow': 3, 'right_hand': 3, 
+            'left_shoulder': 0, 'left_elbow': 2, 'left_hand': 2, 
+            'right_hip': 0, 'right_knee': 1, 'right_foot': 1, 
+            'left_hip': 0, 'left_knee': 4, 'left_foot': 4
+        }
+
+        for c_idx, b_idxs in enumerate(self.joint_to_tri_v_idx):
             # map 14 joint to 5 body parts 
-            if len(self.joint_to_tri_v_idx) == 14:
-                print('Map 14 joint to 5 body parts ')
-                c_idx = c_idx_retarget[c_idx]
+            v_idxs = self.joint_to_tri_v_idx[b_idxs]
+            if DEBUG_FLAG_PARSE:
+                c_idx = c_idx_retarget[b_idxs]
             self.vertices[v_idxs, 3:6] = colors[c_idx]  # rgb colors
 
     def _initialize_opengl_resources(self) -> None:
