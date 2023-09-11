@@ -185,6 +185,12 @@ class BVH(Transform, TimeManager):
 
         return BVH(bvh_p.name, root_joint, frame_max_num, frame_time, pos_data, rot_data)
 
+
+    def apply_translation(self, translation: Vectors) -> None:
+        self.pos_data = self.pos_data - self.pos_data[0][None, :] + translation[None, :]
+        self.root_joint.set_position(self.pos_data[self.cur_frame])
+        
+        
     @classmethod
     def _parse_skeleton(cls, lines: List[str]) -> BVH_Joint:
         """

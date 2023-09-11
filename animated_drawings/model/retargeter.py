@@ -74,8 +74,8 @@ class Retargeter():
             assert False
 
         # ... and moving the bvh so it is on the y=0 plane
-        bvh_groundplane_y = groundplane_joint.get_world_position()[1]
-        self.bvh.offset(np.array([0, -bvh_groundplane_y, 0]))
+        # bvh_groundplane_y = groundplane_joint.get_world_position()[1]
+        # self.bvh.offset(np.array([0, -bvh_groundplane_y, 0]))
 
         self.joint_positions: npt.NDArray[np.float32]
         self.fwd_vectors: npt.NDArray[np.float32]
@@ -241,7 +241,7 @@ class Retargeter():
         
         return joint_depths
 
-    def scale_root_positions_for_character(self, char_to_bvh_scale: float, projection_bodypart_group_for_offset: str) -> None:
+    def scale_root_positions_for_character(self, char_root, char_to_bvh_scale: float, projection_bodypart_group_for_offset: str) -> None:
         """
         Uses projection plane of projection_bodypart_group_for_offset to determine bvh skeleton's projected root offset.
         Scales that offset to account for differences in lengths of character and bvh skeleton limbs.
@@ -254,7 +254,7 @@ class Retargeter():
             assert False, msg
 
         self.char_root_positions = np.empty([self.bvh_root_positions.shape[0], 2], dtype=np.float32)
-        self.char_root_positions[0] = [0, 0]
+        self.char_root_positions[0] = char_root
         for idx in range(1, self.bvh_root_positions.shape[0]):
 
             if np.array_equal(projection_plane, np.array([0.0, 0.0, 1.0])):  # if sagittal projection

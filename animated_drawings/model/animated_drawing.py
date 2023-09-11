@@ -255,7 +255,7 @@ class AnimatedDrawing(Transform, TimeManager):
         self.indices: npt.NDArray[np.int32] = np.stack(self.mesh['triangles']).flatten()  # order in which to render triangles
 
         self.retargeter: Retargeter
-        self._initialize_retargeter_bvh(motion_cfg, retarget_cfg)
+        self._initialize_retargeter_bvh(motion_cfg, retarget_cfg, char_cfg)
 
         # initialize arap solver with original joint positions
         self.arap = ARAP(self.rig.get_joints_2D_positions(), self.mesh['triangles'], self.mesh['vertices'])
@@ -317,7 +317,7 @@ class AnimatedDrawing(Transform, TimeManager):
                 logging.critical(msg)
                 assert False, msg
 
-    def _initialize_retargeter_bvh(self, motion_cfg: MotionConfig, retarget_cfg: RetargetConfig):
+    def _initialize_retargeter_bvh(self, motion_cfg: MotionConfig, retarget_cfg: RetargetConfig, char_cfg: CharacterConfig):
         """ Initializes the retargeter used to drive the animated character.  """
 
         # initialize retargeter
@@ -362,7 +362,8 @@ class AnimatedDrawing(Transform, TimeManager):
         # compute character-bvh scale factor and send to retargeter
         scale_factor = float(c_limb_length / b_limb_length)
         projection_bodypart_group_for_offset = char_bvh_root_offset['bvh_projection_bodypart_group_for_offset']
-        self.retargeter.scale_root_positions_for_character(scale_factor, projection_bodypart_group_for_offset)
+        char_root = np.array(char_cfg.skeleton[0]['loc'])
+        self.retargeter.scale_root_positions_for_character(char_root, scale_factor, projection_bodypart_group_for_offset)
 
         # compute the necessary orienations
         for char_joint_name, (bvh_prox_joint_name, bvh_dist_joint_name) in self.retarget_cfg.char_joint_bvh_joints_mapping.items():
