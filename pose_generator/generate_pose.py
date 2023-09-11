@@ -32,10 +32,27 @@ def draw_pose(pose, H, W, draw_body=True, draw_hand=True, draw_face=True):
     return canvas
 
 
+def draw_map(candidate, subset, pose_dir, H, W):
+    hands = []
+    faces = []
+    bodies = dict(candidate=candidate, subset=subset)
+    pose = dict(bodies=bodies, hands=hands, faces=faces)
+
+    # draw pose.png
+    canvas = draw_pose(pose, H, W)
+
+    detected_map = HWC3(canvas)
+    detected_map = cv2.resize(detected_map, (W, H), interpolation=cv2.INTER_NEAREST)
+    detected_map = Image.fromarray(detected_map)
+    detected_map.save(pose_dir)
+    return detected_map
+    
     
 class OpenposeDetectorPoint(OpenposeDetector):
 
-    def __call__(self, input_image, image_path=None, detect_resolution=512, image_resolution=512, hand_and_face=False, return_pil=True):
+    def __call__(self, input_image, image_path=None, 
+                 detect_resolution=512, image_resolution=512, 
+                 hand_and_face=False, return_pil=True):
         # hand = False
         if not isinstance(input_image, np.ndarray):
             input_image = np.array(input_image, dtype=np.uint8)
@@ -75,24 +92,10 @@ class OpenposeDetectorPoint(OpenposeDetector):
                 candidate[:, 0] /= float(W)
                 candidate[:, 1] /= float(H)
 
-            bodies = dict(candidate=candidate.tolist(), subset=subset.tolist())
-            pose = dict(bodies=bodies, hands=hands, faces=faces)
-
-            canvas = draw_pose(pose, H, W)
-
-        detected_map = HWC3(canvas)
-        # img = resize_image(input_image, image_resolution)
-        # H, W, C = img.shape
-
-        detected_map = cv2.resize(detected_map, (W_, H_), interpolation=cv2.INTER_NEAREST)
-
-        if return_pil:
-            detected_map = Image.fromarray(detected_map)
-
-        return detected_map, candidate, subset
+        return candidate, subset
 
 
-def humanart(img, pose_dir):
+def humanart(img):
     from mmcv.image import imread
     from mmpose.apis import inference_topdown, init_model
     from mmpose.registry import VISUALIZERS
@@ -123,23 +126,6 @@ def humanart(img, pose_dir):
     # show the results
     img = imread(img, channel_order='rgb')
     H, W, C = img.shape
-    
-    #background = np.zeros((H, W, 3), dtype=np.int8)
-    #visualizer.add_datasample(
-    #    'result',
-    #    background,
-    #    data_sample=results,
-    #    draw_gt=False,
-    #    draw_bbox=True,
-    #    draw_heatmap=False,
-    #    show=False,
-    #    out_file=pose_dir)
-
-    # if pose_dir is not None:
-    #   print_log(
-    #        f'the output image has been saved at {pose_dir}',
-    #        logger='current',
-    #        level=logging.INFO)
 
     instances = results.pred_instances
     keypoints = instances.get('transformed_keypoints', instances.keypoints)
@@ -164,28 +150,73 @@ def humanart(img, pose_dir):
     candidate[:, 0] /= float(W)
     candidate[:, 1] /= float(H)
     
-    hands = []
-    faces = []
-    bodies = dict(candidate=candidate, subset=subset)
-    pose = dict(bodies=bodies, hands=hands, faces=faces)
-
-    # draw pose.png
-    canvas = draw_pose(pose, H, W)
-
-    detected_map = HWC3(canvas)
-    detected_map = cv2.resize(detected_map, (W, H), interpolation=cv2.INTER_NEAREST)
-    detected_map = Image.fromarray(detected_map)
-    detected_map.save(pose_dir)
+    return candidate, subset
     
+    
+def extend_leg(candidate, mask_path):
+    # 1. find the vector from knee to foot
+    leg_point_index = {        
+        'right_knee': 9,
+        'right_foot': 10,
+        'left_knee': 12,
+        'left_foot': 13,
+    }
+
+    knee_l = candidate[leg_point_index['left_knee']]
+    foot_l = candidate[leg_point_index['left_foot']]
+    knee_r = candidate[leg_point_index['right_knee']]
+    foot_r = candidate[leg_point_index['right_foot']]
+    
+    # 2. calculate the intersection point between image boundary and the vector
+    def find_border(knee, foot):
+        border_y = 1
+        border_x = (border_y - foot[1]) / (knee[1] - foot[1]) * (knee[0] - foot[0]) + foot[0]
+        if border_x > 1:
+            border_x = 1
+            border_y = (border_x - foot[0]) / (knee[0] - foot[0]) * (knee[1] - foot[1]) + foot[1]
+        elif border_x < 0:
+            border_x = 0
+            border_y = (border_x - foot[0]) / (knee[0] - foot[0]) * (knee[1] - foot[1]) + foot[1]
+            
+        return [border_x, border_y]
+    
+    border_l = find_border(knee_l, foot_l)
+    border_r = find_border(knee_r, foot_r)
+    
+    # 3. read the mask
+    mask = Image.open(mask_path)
+    mask = np.array(mask, dtype=np.uint8)[:, :, 0]
+    H, W = mask.shape
+    
+    # 4. calculate the intersection point between mask boundary and the vector
+    def find_intersection(start, end, thre=0.01, step=7):
+        if sum(end - start) / 2 < thre or step == 0:
+            return start
+        
+        mid = (start + end) / 2
+        if mask[int(mid[1]*H), int(mid[0]*W)]:
+            return find_intersection(mid, end, thre, step-1)
+        else:
+            return find_intersection(start, mid, thre, step-1)
+    
+    thre = 3 / max(H, W)
+    foot_l = find_intersection(foot_l, border_l, thre)
+    foot_r = find_intersection(foot_r, border_r, thre)  
+    
+    # 5. move the foot to the intersection point
+    candidate[leg_point_index['left_foot']] = foot_l
+    candidate[leg_point_index['right_foot']] = foot_r
+
     return candidate
     
-
+    
 def generate_pose(image_path = '../outputs/segment/image_resized.jpg',
                   mask_path = '../cutputs/segement/mask_out.jpg',
                   char_root_dir='../configs/animated_drawing/characters/',
                   char_name='tempchar',
                   pose_name = 'pose.png',
-                  mode='humanart'):
+                  mode='humanart',
+                  extended_leg=False):
     
     body_point_name = [
         # 'root',
@@ -243,24 +274,11 @@ def generate_pose(image_path = '../outputs/segment/image_resized.jpg',
         'left_knee': 12,
         'left_foot': 13,
     }
-
+        
     # detect_resolution = 512
     image = Image.open(image_path)
     pose_dir = os.path.join(char_root_dir, char_name, pose_name)
     
-    if mode == 'humanart':
-        candidate = humanart(image_path, pose_dir)
-        detected_map = Image.open(pose_dir)
-        
-    elif mode == 'controlnet_aux':
-        control_detector = 'lllyasviel/ControlNet'
-        posedet = OpenposeDetectorPoint.from_pretrained(control_detector)
-        detected_map, candidate, subset = posedet(image, image_path)
-        detected_map.save(pose_dir)
-        
-    else:
-        NotImplementedError
-
     # resize image 
     image_np = np.array(image, dtype=np.uint8)
     image_np = HWC3(image_np)
@@ -276,11 +294,25 @@ def generate_pose(image_path = '../outputs/segment/image_resized.jpg',
     image_resized = Image.fromarray(mask_np)
     image_resized.save(os.path.join(char_root_dir, char_name, 'mask.png'))
 
+    W, H = image_resized.size
+
+    if mode == 'humanart':
+        candidate, subset = humanart(image_path)
+        
+    elif mode == 'controlnet_aux':
+        control_detector = 'lllyasviel/ControlNet'
+        posedet = OpenposeDetectorPoint.from_pretrained(control_detector)
+        candidate, subset = posedet(image, image_path)
+        
+    else:
+        NotImplementedError
+
+    if extended_leg:
+        candidate = extend_leg(candidate, mask_path)
+    detected_map = draw_map(candidate, subset, pose_dir, H, W)
 
     point_location = {}
-    W, H = image_resized.size
     key_list = list(body_point_index.keys())
-
     
     for i in range(len(key_list)):
         key = key_list[i]
