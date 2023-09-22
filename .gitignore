@@ -23,3 +23,5 @@ examples/garlic_out
 # DO include .gifs used by the Readme
 !media/*.gif
 
+examples/bvh/mocap/*.bvh
+examples/bvh/*

@@ -1,0 +1,138 @@
+char_starting_location: [-0.5, -0.5, -0.5]
+bvh_projection_bodypart_groups:
+- bvh_joint_names:
+  - rCollar
+  - rShldr
+  - rForeArm
+  - rHand
+  - rThumb1
+  - rThumb2
+  - rIndex1
+  - rIndex2
+  - rMid1
+  - rMid2
+  - rRing1
+  - rRing2
+  - rPinky1
+  - rPinky2
+  - lCollar
+  - lShldr
+  - lForeArm
+  - lHand
+  - lThumb1
+  - lThumb2
+  - lIndex1
+  - lIndex2
+  - lMid1
+  - lMid2
+  - lRing1
+  - lRing2
+  - lPinky1
+  - lPinky2
+  method: pca
+  name: Upper Limbs
+- bvh_joint_names:
+  - rButtock
+  - rThigh
+  - rShin
+  - rFoot
+  - lButtock
+  - lThigh
+  - lShin
+  - lFoot
+  method: pca
+  name: Lower Limbs
+- bvh_joint_names:
+  - hip
+  - chest
+  - neck
+  - head
+  - leftEye
+  - rightEye
+  method: frontal
+  name: Trunk
+char_bodypart_groups:
+- bvh_depth_drivers:
+  - hip
+  char_joints:
+  - right_hip_b
+  - left_hip_b
+  - right_hip_f
+  - left_hip_f
+  - hip
+  - torso
+  - neck
+- bvh_depth_drivers:
+  - rFoot
+  char_joints:
+  - left_knee_b
+  - left_foot_b
+- bvh_depth_drivers:
+  - lFoot
+  char_joints:
+  - right_knee_b
+  - right_foot_b
+- bvh_depth_drivers:
+  - rFoot
+  char_joints:
+  - left_knee_f
+  - left_foot_f
+- bvh_depth_drivers:
+  - lFoot
+  char_joints:
+  - right_knee_f
+  - right_foot_f
+char_bvh_root_offset:
+  bvh_projection_bodypart_group_for_offset: Lower Limbs
+  bvh_joints:
+  - - rFoot
+    - rShin
+    - rThigh
+  - - lFoot
+    - lShin
+    - lThigh
+  char_joints:
+  - - left_foot_f
+    - left_knee_f
+    - left_hip_f
+  - - right_foot_f
+    - right_knee_f
+    - right_hip_f
+  - - left_foot_b
+    - left_knee_b
+    - left_hip_b
+  - - right_foot_b
+    - right_knee_b
+    - right_hip_b
+char_joint_bvh_joints_mapping:
+  left_knee_b: !!python/tuple
+  - lThigh
+  - lShin
+  left_foot_f: !!python/tuple
+  - lShin
+  - lFoot
+  left_foot_b: !!python/tuple
+  - lShin
+  - lFoot
+  left_knee_f: !!python/tuple
+  - lThigh
+  - lShin
+  torso: !!python/tuple
+  - hip
+  - chest
+  neck: !!python/tuple
+  - hip
+  - head
+  right_knee_b: !!python/tuple
+  - rThigh
+  - rShin
+  right_foot_f: !!python/tuple
+  - rShin
+  - rFoot
+  right_foot_b: !!python/tuple
+  - rShin
+  - rFoot
+  right_knee_f: !!python/tuple
+  - rThigh
+  - rShin
+char_runtime_checks: []

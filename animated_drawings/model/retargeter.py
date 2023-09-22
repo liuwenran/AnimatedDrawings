@@ -354,6 +354,13 @@ class Retargeter():
         joint_depths = self._manipulate_depths(joint_depths)
 
         root_position = np.array([self.char_root_positions[frame_idx, 0], self.char_root_positions[frame_idx, 1], 0.0], dtype=np.float32)
-        root_position += self.character_start_loc  # offset by character's starting location
-
+        # TODO TODO TODO 
+        FIX_ROOT_FLAG = False
+        if FIX_ROOT_FLAG:
+            if frame_idx == 0:
+                root_position += self.character_start_loc
+        else:
+            # offset by character's starting location
+            root_position += self.character_start_loc
+        
         return orientations, joint_depths, root_position

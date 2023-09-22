@@ -27,7 +27,7 @@ bvh_projection_bodypart_groups:
   - Chest
   - Chest2
   - Head
-  method: frontal
+  method: pca
   name: Trunk
 char_bodypart_groups:
 - bvh_depth_drivers:
@@ -84,14 +84,14 @@ char_bvh_root_offset:
     - right_hip_b
 char_joint_bvh_joints_mapping:
   left_knee_b: !!python/tuple
-  - LeftHip
-  - LeftKnee
+  - LeftShoulder
+  - LeftElbow
   left_foot_f: !!python/tuple
   - LeftKnee
   - LeftAnkle
   left_foot_b: !!python/tuple
-  - LeftKnee
-  - LeftAnkle
+  - LeftElbow
+  - LeftWrist
   left_knee_f: !!python/tuple
   - LeftHip
   - LeftKnee
@@ -102,14 +102,14 @@ char_joint_bvh_joints_mapping:
   - Hips
   - Head
   right_knee_b: !!python/tuple
-  - RightHip
-  - RightKnee
+  - RightShoulder
+  - RightElbow
   right_foot_f: !!python/tuple
   - RightKnee
   - RightAnkle
   right_foot_b: !!python/tuple
-  - RightKnee
-  - RightAnkle
+  - RightElbow
+  - RightWrist
   right_knee_f: !!python/tuple
   - RightHip
   - RightKnee
