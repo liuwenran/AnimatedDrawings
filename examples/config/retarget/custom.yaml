@@ -12,9 +12,11 @@ bvh_projection_bodypart_groups:
   method: pca
   name: Upper Limbs
 - bvh_joint_names:
+  - LeftHipJoint
   - LeftUpLeg
   - LeftLeg
   - LeftFoot
+  - RightHipJoint
   - RightUpLeg
   - RightLeg
   - RightFoot
@@ -23,8 +25,10 @@ bvh_projection_bodypart_groups:
 - bvh_joint_names:
   - Hips
   - Neck
+  - Neck1
   - Spine
   - Spine1
+  - LowerBack
   method: frontal
   name: Trunk
 char_bodypart_groups:

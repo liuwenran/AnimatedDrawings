@@ -58,7 +58,7 @@ class Quaternions:
         self.normalize()
 
     def normalize(self) -> None:
-        self.qs = self.qs / np.expand_dims(np.sum(self.qs ** 2.0, axis=-1) ** 0.5, axis=-1)
+        self.qs = self.qs / (np.expand_dims(np.sum(self.qs ** 2.0, axis=-1) ** 0.5, axis=-1) + 1e-8)
 
     def to_rotation_matrix(self) -> npt.NDArray[np.float32]:
         """
