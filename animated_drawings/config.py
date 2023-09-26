@@ -395,7 +395,7 @@ class MotionConfig():
         # validate up
         try:
             self.up: str = motion_cfg['up']
-            assert self.up in ['+y', '+z'], 'up must be "+y" or "+z'
+            assert self.up in ['+y', '+z', '-y', '-z'], 'up must be "+-y" or "+-z'
         except (AssertionError, ValueError) as e:
             msg = f'Error validating up: {e}'
             logging.critical(msg)

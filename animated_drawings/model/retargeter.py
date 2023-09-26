@@ -48,6 +48,8 @@ class Retargeter():
             pass  # no rotation needed
         elif motion_cfg.up == '+z':
             self.bvh.set_rotation(Quaternions.from_euler_angles('yx', np.array([-90.0, -90.0])))
+        elif motion_cfg.up == '-y':
+            self.bvh.set_rotation(Quaternions.from_euler_angles('yx', np.array([180.0, 180.0])))
         else:
             msg = f'up value not implemented: {motion_cfg.up}'
             logging.critical(msg)

@@ -1,0 +1,128 @@
+char_starting_location: [-0.5, -0.5, -0.5]
+bvh_projection_bodypart_groups:
+- bvh_joint_names:
+  - LeftShoulder
+  - LeftArm
+  - LeftForeArm
+  - LeftHand
+  - RightShoulder
+  - RightArm
+  - RightForeArm
+  - RightHand
+  method: frontal
+  name: Upper Limbs
+- bvh_joint_names:
+#  - LeftHipJoint
+  - LeftUpLeg
+  - LeftLeg
+  - LeftFoot
+#  - RightHipJoint
+  - RightUpLeg
+  - RightLeg
+  - RightFoot
+  method: frontal
+  name: Lower Limbs
+- bvh_joint_names:
+  - Hips
+  - Neck
+  - Head
+  - Spine
+  - Spine1
+  - Tail
+  - Tail1
+  method: frontal
+  name: Trunk
+char_bodypart_groups:
+- bvh_depth_drivers:
+  - Hips
+  char_joints:
+  - RightShoulder
+  - LeftShoulder
+  - LeftUpLeg
+  - RightUpLeg
+  - Spine
+  - Spine1
+  - Neck
+  - Head
+  - Tail
+  - Tail1
+- bvh_depth_drivers:
+  - LeftHand
+  char_joints:
+  - LeftForeArm
+  - LeftHand
+- bvh_depth_drivers:
+  - RightHand
+  char_joints:
+  - RightForeArm
+  - RightHand
+- bvh_depth_drivers:
+  - LeftFoot
+  char_joints:
+  - LeftLeg
+  - LeftFoot
+- bvh_depth_drivers:
+  - RightFoot
+  char_joints:
+  - RightLeg
+  - RightFoot
+char_bvh_root_offset:
+  bvh_projection_bodypart_group_for_offset: Lower Limbs
+  bvh_joints:
+  - - RightUpLeg
+    - RightLeg
+    - RightFoot
+  - - LeftUpLeg
+    - LeftLeg
+    - LeftFoot
+  char_joints:
+  - - RightUpLeg
+    - RightLeg
+    - RightFoot
+  - - LeftUpLeg
+    - LeftLeg
+    - LeftFoot
+  - - RightArm
+    - RightForeArm
+    - RightHand
+  - - LeftArm
+    - LeftForeArm
+    - LeftHand
+char_joint_bvh_joints_mapping:
+  LeftShoulder: !!python/tuple
+  - LeftShoulder
+  - LeftArm
+  LeftArm: !!python/tuple
+  - LeftArm
+  - LeftForeArm
+  LeftForeArm: !!python/tuple
+  - LeftForeArm
+  - LeftHand
+  RightShoulder: !!python/tuple
+  - RightShoulder
+  - RightArm
+  RightArm: !!python/tuple
+  - RightArm
+  - RightForeArm
+  RightForeArm: !!python/tuple
+  - RightForeArm
+  - RightHand
+  LeftUpLeg: !!python/tuple
+  - LeftUpLeg
+  - LeftLeg
+  LeftLeg: !!python/tuple
+  - LeftLeg
+  - LeftFoot
+  Spine: !!python/tuple
+  - Spine
+  - Spine1
+  Spine1: !!python/tuple
+  - Spine1
+  - Neck
+  Neck: !!python/tuple
+  - Neck
+  - Head
+  Tail: !!python/tuple
+  - Tail
+  - Tail1
+char_runtime_checks: []

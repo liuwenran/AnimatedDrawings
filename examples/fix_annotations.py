@@ -11,9 +11,11 @@ import sys
 import yaml
 
 global cfg_path
-cfg_path = '/home/yangxiaoyan/code/gradio-demos/AnimatedDrawings/examples/characters/char11/char_cfg.yaml'
+char_file = 'char12' # siggraph
+cfg_path = f'/home/yangxiaoyan/code/gradio-demos/AnimatedDrawings/examples/characters/{char_file}/char_cfg.yaml'
 global char_folder
-char_folder = "/home/yangxiaoyan/code/gradio-demos/AnimatedDrawings/examples/characters/char11"
+char_folder = f"/home/yangxiaoyan/code/gradio-demos/AnimatedDrawings/examples/characters/{char_file}"
+
 app = Flask(__name__, template_folder=os.path.abspath("./fixer_app/"))
 
 
@@ -96,7 +98,7 @@ if __name__ == "__main__":
     #args = parser.parse_args()
 
     # char_folder = args.char_folder
-    char_folder = 'characters/char12'
+    char_folder = f'characters/{char_file}'
     cfg_path = os.path.join(char_folder, "char_cfg.yaml")
 
     if not os.path.isfile(cfg_path):

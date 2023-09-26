@@ -1,0 +1,113 @@
+height: 560
+skeleton:
+- loc:
+  - 344
+  - 183
+  name: root
+  parent: null
+- loc:
+  - 251
+  - 180
+  name: Hips
+  parent: root
+- loc:
+  - 417
+  - 166
+  name: Spine
+  parent: Hips
+- loc:
+  - 480
+  - 175
+  name: Spine1
+  parent: Spine
+- loc:
+  - 639
+  - 213
+  name: Neck
+  parent: Spine1
+- loc:
+  - 706
+  - 199
+  name: Head
+  parent: Neck
+- loc:
+  - 618
+  - 224
+  name: LeftShoulder
+  parent: Spine1
+- loc:
+  - 668
+  - 257
+  name: LeftArm
+  parent: LeftShoulder
+- loc:
+  - 645
+  - 343
+  name: LeftForeArm
+  parent: LeftArm
+- loc:
+  - 731
+  - 433
+  name: LeftHand
+  parent: LeftForeArm
+- loc:
+  - 593
+  - 234
+  name: RightShoulder
+  parent: Spine1
+- loc:
+  - 599
+  - 279
+  name: RightArm
+  parent: RightShoulder
+- loc:
+  - 494
+  - 345
+  name: RightForeArm
+  parent: RightArm
+- loc:
+  - 498
+  - 521
+  name: RightHand
+  parent: RightForeArm
+- loc:
+  - 357
+  - 252
+  name: LeftUpLeg
+  parent: Hips
+- loc:
+  - 397
+  - 329
+  name: LeftLeg
+  parent: LeftUpLeg
+- loc:
+  - 318
+  - 463
+  name: LeftFoot
+  parent: LeftLeg
+- loc:
+  - 216
+  - 240
+  name: RightUpLeg
+  parent: Hips
+- loc:
+  - 259
+  - 342
+  name: RightLeg
+  parent: RightUpLeg
+- loc:
+  - 188
+  - 428
+  name: RightFoot
+  parent: RightLeg
+- loc:
+  - 206
+  - 215
+  name: Tail
+  parent: Hips
+- loc:
+  - 142
+  - 357
+  name: Tail1
+  parent: Tail
+width: 1000
