@@ -3,6 +3,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from __future__ import annotations
+import os
 import logging
 from collections import defaultdict
 from pathlib import Path
@@ -16,7 +17,9 @@ class Config():
 
     def __init__(self, user_mvc_cfg_fn: str) -> None:
         # get the base mvc config
-        with open(resource_filename(__name__, "mvc_base_cfg.yaml"), 'r') as f:
+        cur_dir = os.path.realpath(__file__)
+        cur_dir = os.path.dirname(cur_dir)
+        with open(cur_dir+"/mvc_base_cfg.yaml", 'r') as f:
             base_cfg = defaultdict(dict, yaml.load(f, Loader=yaml.FullLoader) or {})  # pyright: ignore[reportUnknownMemberType])
 
         # search for the user-specified mvc config
